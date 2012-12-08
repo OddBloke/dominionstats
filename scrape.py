@@ -1,6 +1,4 @@
 #!/usr/bin/python
-
-# taken from 
 # http://stackoverflow.com/questions/1060279/iterating-through-a-range-of-dates-in-python
 
 import datetime
@@ -41,6 +39,13 @@ def RemoveSmallFileIfExists(fn):
         print 'removing small existing file', fn
         os.unlink(fn)
 
+
+class MyURLOpener(urllib.FancyURLopener):
+
+    def http_error_default(self, *args, **kwargs):
+        urllib.URLopener.http_error_default(self, *args, **kwargs)
+
+
 args = parser.parse_args()
 
 for cur_date in utils.daterange(datetime.date(2010, 10, 15), 
@@ -61,19 +66,10 @@ for cur_date in utils.daterange(datetime.date(2010, 10, 15),
             os.mkdir(directory)
         RemoveSmallFileIfExists(saved_games_bundle)
 
-        urls_by_priority = [CouncilroomGamesCollectionUrl(cur_date),
-                            IsotropicGamesCollectionUrl(cur_date)] 
-        
-        for url in urls_by_priority:
-            print 'getting', saved_games_bundle, 'at', url
-            contents = urllib.urlopen(url).read()
-            if len(contents) > SMALL_FILE_SIZE:
-                print 'yay, success from', url, 'no more requests for', \
-                    str_date, 'needed'
-                open(saved_games_bundle, 'w').write(contents)
-                break
-            else:
-                print 'request to', url, 'failed to find large file'
+        url = IsotropicGamesCollectionUrl(cur_date)
+
+        print 'getting', saved_games_bundle, 'at', url
+        filename, headers = MyURLOpener().retrieve(url, saved_games_bundle)
 
         time.sleep(5)
         os.chdir(directory)
@@ -82,4 +78,3 @@ for cur_date in utils.daterange(datetime.date(2010, 10, 15),
         os.system(cmd)
         os.system('chmod -R 755 .')
         os.chdir('..')
-                        
